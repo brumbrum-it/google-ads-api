@@ -7,9 +7,21 @@ import GrpcClient, { GoogleAdsNodeOptions } from './grpc'
 import { normaliseCustomerId } from './utils'
 import { PreReportHook, PostReportHook } from './types'
 
+// FIXME aggiungere typing di ServiceAccount
+// le chiavi obbligatorie sono
+// private_key (String PEM)
+// client_id
+// auth_uri
+// token_uri
+// client_email
+
+// FIXME qua client_secret e client_id devono essere opzionali se
+// presente ServiceAcccount
+// se puo' renderne opzionale solo una switchamo client_secret
+// e allora client_id del serviceaccount non serve piu'
 interface ClientOptions {
     readonly client_id: string
-    readonly client_secret: string
+    readonly client_secret: string // FIXME default null
     readonly developer_token: string
     readonly redis_options?: any
 }
@@ -80,6 +92,8 @@ export default class GoogleAdsApi {
         }
 
         const client = new GrpcClient(
+            //FIXME levare tutti i parametri singoli
+            //e passare un GrpcClientOptions
             this.options.developer_token,
             this.options.client_id,
             this.options.client_secret,

@@ -8,7 +8,7 @@ import {
 } from 'google-ads-node'
 import Bottleneck from 'bottleneck'
 
-import { getAccessToken } from './token'
+import { getAccessToken, //FIXME getAccessTokenForServiceAccount } from './token'
 
 interface BuildSearchRequestResponse {
     request: SearchGoogleAdsRequest
@@ -24,10 +24,14 @@ export interface GoogleAdsNodeOptions {
     logging?: LogOptions
 }
 
+//FIXME creare type GrpcClientOptions
+//con dentro gli attuali parametri piu' ServiceAccount
+
 export default class GrpcClient {
     private client: GoogleAdsClient
 
     constructor(
+        //FIXME usare GrpcClientOptions
         developer_token: string,
         client_id: string,
         client_secret: string,
@@ -45,14 +49,19 @@ export default class GrpcClient {
             additional_options.logging = gads_node_options.logging
         }
 
+        // FIXME visto che usa accessTokenGetter ci fermiamo qui
+        // con il drill delle opzioni service account
         this.client = new GoogleAdsClient({
             developer_token,
             client_id,
-            client_secret,
+            client_secret, // FIXME sara' null in caso di service account
             refresh_token,
             login_customer_id,
             parseResults: true,
             async accessTokenGetter(clientId: string, clientSecret: string, refreshToken: string) {
+                // FIXME qua si dovrebbe vedere le GrpcClientOptions 
+                // se grpcClientOptions.serviceAccount not empty usiamo getAccessTokenForServiceAccount
+                // altrimenti questo sotto
                 return getAccessToken({
                     client_id: clientId,
                     client_secret: clientSecret,
