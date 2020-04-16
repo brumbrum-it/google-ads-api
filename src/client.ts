@@ -12,7 +12,6 @@ export interface ServiceAccount {
     readonly auth_uri: string
     readonly token_uri: string
     readonly client_email: string
-    readonly sub: string
 }
 
 interface ClientOptions {
@@ -102,8 +101,8 @@ export default class GoogleAdsApi {
         return Customer(customer_account_id, client, this.throttler, pre_report_hook, post_report_hook)
     }
 
-    public async requestAndSetAccessToken(service_account: ServiceAccount) {
-        let token_object = await getAccessTokenByServiceAccount(service_account);
+    public async requestAndSetAccessToken(service_account: ServiceAccount, sub: string) {
+        let token_object = await getAccessTokenByServiceAccount(service_account, sub);
         this.access_token = token_object.access_token;
     }
 }
