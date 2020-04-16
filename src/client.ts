@@ -1,27 +1,23 @@
 import Bottleneck from 'bottleneck'
 import crypto from 'crypto'
-import { noop } from 'lodash'
-
+import { noop, isEmpty } from 'lodash'
 import Customer, { CustomerInstance } from './customer'
 import GrpcClient, { GoogleAdsNodeOptions } from './grpc'
 import { normaliseCustomerId } from './utils'
 import { PreReportHook, PostReportHook } from './types'
+import { getAccessTokenByServiceAccount } from './token'
 
-// FIXME aggiungere typing di ServiceAccount
-// le chiavi obbligatorie sono
-// private_key (String PEM)
-// client_id
-// auth_uri
-// token_uri
-// client_email
+export interface ServiceAccount {
+    readonly private_key: string
+    readonly auth_uri: string
+    readonly token_uri: string
+    readonly client_email: string
+    readonly sub: string
+}
 
-// FIXME qua client_secret e client_id devono essere opzionali se
-// presente ServiceAcccount
-// se puo' renderne opzionale solo una switchamo client_secret
-// e allora client_id del serviceaccount non serve piu'
 interface ClientOptions {
     readonly client_id: string
-    readonly client_secret: string // FIXME default null
+    readonly client_secret: string
     readonly developer_token: string
     readonly redis_options?: any
 }
@@ -39,6 +35,7 @@ interface CustomerOptions extends CustomerAuth, GoogleAdsNodeOptions {
 
 export default class GoogleAdsApi {
     private readonly options: ClientOptions
+    private access_token: string = '';
     private throttler: Bottleneck
 
     constructor(options: ClientOptions) {
@@ -76,7 +73,8 @@ export default class GoogleAdsApi {
         prevent_mutations,
         logging,
     }: CustomerOptions): CustomerInstance {
-        if (!customer_account_id || !refresh_token) {
+
+        if (!customer_account_id || (!refresh_token && isEmpty(this.access_token))) {
             throw new Error('Must specify {customer_account_id, refresh_token}')
         }
 
@@ -92,16 +90,21 @@ export default class GoogleAdsApi {
         }
 
         const client = new GrpcClient(
-            //FIXME levare tutti i parametri singoli
-            //e passare un GrpcClientOptions
             this.options.developer_token,
             this.options.client_id,
             this.options.client_secret,
             refresh_token as string,
             login_customer_id,
+            this.access_token,
             gads_node_options
         )
 
         return Customer(customer_account_id, client, this.throttler, pre_report_hook, post_report_hook)
     }
+
+    public async requestAndSetAccessToken(service_account: ServiceAccount) {
+        let token_object = await getAccessTokenByServiceAccount(service_account);
+        this.access_token = token_object.access_token;
+    }
 }
+
