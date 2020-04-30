@@ -34,7 +34,8 @@ interface CustomerOptions extends CustomerAuth, GoogleAdsNodeOptions {
 
 export default class GoogleAdsApi {
     private readonly options: ClientOptions
-    private access_token: string = '';
+    private access_token: string = ''
+    private token_expiration: number = 0
     private throttler: Bottleneck
 
     constructor(options: ClientOptions) {
@@ -104,6 +105,15 @@ export default class GoogleAdsApi {
     public async requestAndSetAccessToken(service_account: ServiceAccount, sub: string) {
         let token_object = await getAccessTokenByServiceAccount(service_account, sub);
         this.access_token = token_object.access_token;
+        this.token_expiration = token_object.expires_in;
+    }
+
+    public IsTokenExpired() : boolean {
+        return this.token_expiration < Date.now()
+    }
+
+    public getTokenExpiration() : number {
+        return this.token_expiration
     }
 }
 
